@@ -87,6 +87,8 @@ export async function POST(req: Request) {
                         street: shippingAddress!.line1!,
                         state: shippingAddress!.state,
                     },
+                    orderId,
+                    orderDate: updatedOrder.createdAt.toLocaleDateString()
                 })
             })
         }
