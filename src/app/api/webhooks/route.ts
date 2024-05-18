@@ -4,26 +4,26 @@ import { stripe } from '@/lib/stripe'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { Resend } from 'resend'
+import OrderReceivedEmail from '@/components/email/OrderReceivedEmail'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
     try {
-        console.log('Webhook received');
         const body = await req.text()
-        console.log('Webhook body', body);
         const signature = headers().get('stripe-signature')
 
         if (!signature) {
             return new Response('Invalid signature', { status: 400 })
         }
 
-        console.log('Webhook signature', signature);
 
         const event = stripe.webhooks.constructEvent(
             body,
             signature,
             process.env.STRIPE_WEBHOOK_SECRET!
         )
-        console.log('Webhook event', event.type);
 
         if (event.type === 'checkout.session.completed') {
             if (!event.data.object.customer_details?.email) {
@@ -37,18 +37,12 @@ export async function POST(req: Request) {
                 orderId: null,
             }
 
-            console.log('User ID', userId);
-            console.log('Order ID', orderId);
-
             if (!userId || !orderId) {
                 throw new Error('Invalid request metadata')
             }
 
             const billingAddress = session.customer_details!.address
             const shippingAddress = session.shipping_details!.address
-
-            console.log('Billing address', billingAddress);
-            console.log('Shipping address', shippingAddress);
 
             const updatedOrder = await db.order.update({
                 where: {
@@ -79,7 +73,22 @@ export async function POST(req: Request) {
                 },
             })
 
-            console.log('Order updated', updatedOrder);
+            await resend.emails.send({
+                from: 'CaseCobra <miracleiztb@gmail.com>',
+                to: [event.data.object.customer_details.email!],
+                subject: 'Thanks for your order!',
+                react: OrderReceivedEmail({
+                    // @ts-ignore
+                    shippingAddress: {
+                        name: session.customer_details!.name!,
+                        city: shippingAddress!.city!,
+                        country: shippingAddress!.country!,
+                        postalCode: shippingAddress!.postal_code!,
+                        street: shippingAddress!.line1!,
+                        state: shippingAddress!.state,
+                    },
+                })
+            })
         }
 
         return NextResponse.json({ result: event, ok: true })

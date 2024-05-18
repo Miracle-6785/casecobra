@@ -5,14 +5,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Toaster } from "@/components/ui/toaster";
 import Providers from "@/components/Providers";
+import { constructMetadata } from "@/lib/utils";
 
 const recursive = Recursive({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Casecobra",
-  description: "The next level case design system",
-};
-
+export const metadata: Metadata = constructMetadata();
 export default function RootLayout({
   children,
 }: Readonly<{

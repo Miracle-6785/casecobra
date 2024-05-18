@@ -42,7 +42,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
     setShowConfetti(true);
   }, []);
 
-  const { mutate: createPaymentSession } = useMutation({
+  const { mutate: createPaymentSession, isPending } = useMutation({
     mutationKey: ["get-checkout-session"],
     mutationFn: createCheckoutSession,
     onSuccess: ({ url }) => {
@@ -61,7 +61,6 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
   const handleCheckout = () => {
     if (user) {
       // create payment session
-      // console.log(user);
       createPaymentSession({ configId: id });
     } else {
       // need to login
@@ -91,7 +90,7 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
             imgSrc={configuration.croppedImageUrl!}
           />
         </div>
-        <div className="mt-6 sm:col-span-9 sm:mt-0 md:row-end-1">
+        <div className="mt-6 sm:col-span-9 md:row-end-1">
           <h3 className="text-3xl font-bold tracking-tight text-gray-900">
             Your {modelLabel} case
           </h3>
@@ -160,8 +159,9 @@ const DesignPreview = ({ configuration }: { configuration: Configuration }) => {
             <div className="mt-8 flex justify-end pb-12">
               <Button
                 className="px-4 sm:px-6 lg:px-8"
-                // isLoading={true}
-                // loadingText="loading"
+                isLoading={isPending}
+                disabled={isPending}
+                loadingText="Loading..."
                 onClick={() => handleCheckout()}
               >
                 Check out{" "}
